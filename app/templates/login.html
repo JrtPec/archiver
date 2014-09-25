@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% include 'flash.html' %}
+<div class="well">
+    <p><a href="{{url_for('facebook_login')}}"><img src="/static/img/facebook.png"></a></p>
+</div>
+{% endblock %}
