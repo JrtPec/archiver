@@ -1,7 +1,8 @@
 from app import app, lm, facebook, db
 from flask.ext.login import current_user, login_required, login_user, logout_user
-from flask import g, render_template, redirect, flash, session, url_for, request
-from models import User
+from flask import g, render_template, redirect, flash, session, url_for, request, abort
+from models import User, Category
+from forms import category_form, delete_form
 
 @app.before_request
 def before_request():
@@ -10,6 +11,17 @@ def before_request():
 @lm.user_loader
 def load_user(id):
     return User.query.get(id)
+
+@app.errorhandler(404)
+def internal_error(error):
+    flash('That page was not found, sorry!')
+    return redirect(url_for('/'))
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    flash('Something went wrong, sorry!')
+    return redirect(url_for('/'))
 
 @app.route('/login')
 def login():
@@ -75,3 +87,55 @@ def settings():
     return render_template(
         'settings.html',
         title = "Settings")
+
+@app.route('/category/<action>/<id>', methods = ['GET','POST'])
+@app.route('/category/<action>', methods = ['GET','POST'])
+@login_required
+def category(action, id=None):
+    if action=="edit":
+        category = Category.query.get(id)
+        if category == None:
+            return redirect(url_for('settings'))
+        name = category.name
+    else:
+        name = None
+    form = category_form(name)
+
+    if form.validate_on_submit():
+        if action == "new":
+            category = Category(name=form.name.data, color=form.color.data, user=g.user)
+        elif action == "edit":
+            category.name = form.name.data
+            category.color = form.color.data
+        db.session.add(category)
+        db.session.commit()
+        return redirect(url_for('settings'))
+
+    elif request.method != 'POST':
+        if category:
+            form.name.data = category.name
+            form.color.data = category.color
+    return render_template(
+        'category.html',
+        title = "Configure category",
+        form = form)
+
+@app.route('/delete/<type>/<id>', methods = ['GET','POST'])
+@login_required
+def delete(type,id):
+    form = delete_form()
+    if form.validate_on_submit():
+        if type == "category":
+            c = Category.query.get(id)
+            if category != None:
+                db.session.delete(c)
+                db.session.commit()
+                flash('Category deleted')
+            return redirect(url_for('settings'))
+        else:
+            abort(500)
+    return render_template(
+        'delete.html',
+        title = 'Delete',
+        form = form,
+        thing = type)
