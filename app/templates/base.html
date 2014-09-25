@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+	<head>
+    	{% if title %}
+    		<title>{{title}} - Archiver</title>
+    	{% else %}
+    		<title>Archiver</title>
+    	{% endif %}
+	</head>
+	<body>
+		<div class="container">
+			<div class="row">
+				<div class="span12">
+					{% block content %}{% endblock %}
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
