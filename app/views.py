@@ -68,3 +68,10 @@ def facebook_authorized(resp):
 def index():
 	return render_template(
 		'index.html')
+
+@app.route('/settings')
+@login_required
+def settings():
+    return render_template(
+        'settings.html',
+        title = "Settings")
