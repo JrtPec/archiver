@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+	<div class="well">
+		<h4>Entries</h4>
+	</div>
+	{% for entry in entries %}
+		<div class="well" style="background-color:{{entry.category.color}}">
+			<p>Category: {{ entry.category.name }}</p>
+			{% if entry.get_amount() != None %}
+				<p>Amount: € {{ entry.get_amount() }}</p>
+			{% endif %}
+			<p>Date: {{ entry.date }}</p>
+			{% if entry.due_date != None %}
+				<p>Due Date: {{ entry.due_date.date() }}</p>
+			{% endif %}
+			{% if entry.info != "" %}
+				<p>Info: {{ entry.info }}</p>
+			{% endif %}
+			{% if entry.is_checked() == False %}
+				<p><b>NOT CHECKED</b></p>
+			{% endif %}
+			<p>
+				<a href="{{url_for('delete',type='entry',id=entry.id)}}">
+					<i class="icon icon-trash"></i>
+				</a>
+				|
+				<a href="{{url_for('entry',action='edit',id=entry.id)}}">
+					<i class="icon icon-edit"></i>
+				</a>
+		</div>
+	{% endfor %}
+{% endblock %}

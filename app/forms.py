@@ -1,7 +1,7 @@
 from flask.ext.wtf import Form
-from wtforms import TextField
+from wtforms import TextField, TextAreaField, DecimalField, SelectField, DateField, BooleanField
 from wtforms.validators import DataRequired as Required
-from wtforms.validators import Length, optional,Regexp
+from wtforms.validators import Length, optional,Regexp,NumberRange
 from models import User, Category
 from flask import g
 
@@ -24,6 +24,14 @@ class category_form(Form):
 				self.name.errors.append('You already have a category with this name.')
 				return False
 		return True
+
+class entry_form(Form):
+	category = SelectField('category', coerce=int, validators=[NumberRange(min=1),Required()])
+	date = DateField('date', validators=[Required()])
+	due_date = DateField('due_date', validators=[optional()])
+	amount = DecimalField('amount', validators=[optional()], places = 2)
+	info = TextAreaField('info', validators=[optional(),Length(min=0,max=140)])
+	check = BooleanField('check', default = False)
 
 class delete_form(Form):
 	pass

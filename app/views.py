@@ -1,8 +1,9 @@
 from app import app, lm, facebook, db
 from flask.ext.login import current_user, login_required, login_user, logout_user
 from flask import g, render_template, redirect, flash, session, url_for, request, abort
-from models import User, Category
-from forms import category_form, delete_form
+from models import User, Category, Entry
+from forms import category_form, delete_form, entry_form
+from datetime import datetime
 
 @app.before_request
 def before_request():
@@ -103,7 +104,10 @@ def category(action, id=None):
 
     if form.validate_on_submit():
         if action == "new":
-            category = Category(name=form.name.data, color=form.color.data, user=g.user)
+            category = Category(
+                name=form.name.data, 
+                color=form.color.data, 
+                user=g.user)
         elif action == "edit":
             category.name = form.name.data
             category.color = form.color.data
@@ -112,13 +116,84 @@ def category(action, id=None):
         return redirect(url_for('settings'))
 
     elif request.method != 'POST':
-        if category:
+        if action=="edit":
             form.name.data = category.name
             form.color.data = category.color
     return render_template(
         'category.html',
         title = "Configure category",
         form = form)
+
+@app.route('/entry/<action>', methods = ['GET','POST'])
+@app.route('/entry/<action>/<id>', methods = ['GET','POST'])
+@login_required
+def entry(action,id=None):
+    if g.user.categories.first() == None:
+        flash('You need at least one category to start adding entries')
+        return redirect(url_for('category',action='new'))
+
+    form = entry_form()
+    form.category.choices = [(c.id, c.name) for c in g.user.categories]
+
+    if action == "edit":
+        entry = Entry.query.get(id)
+        if entry == None:
+            return redirect(url_for('entries'))
+
+    if form.validate_on_submit():
+        if action == "new":
+            entry = Entry(user=g.user,
+                category_id=form.category.data,
+                date=form.date.data,
+                due_date=form.due_date.data,
+                info=form.info.data)
+            if form.amount.data:
+                entry.set_amount(euros=form.amount.data)
+            if form.check.data == True:
+                entry.check = 1
+            flash('New entry added!')
+            redir = 'index'
+        if action == "edit":
+            entry.category_id = form.category.data
+            entry.date = form.date.data
+            entry.due_date = form.due_date.data
+            entry.info = form.info.data
+            if form.amount.data == None:
+                entry.cents == None
+            else:
+                entry.set_amount(euros=form.amount.data)
+            if form.check.data == True:
+                entry.check = 1
+            else:
+                entry.check = 0
+            flash('Entry eddited!')
+            redir = 'entries'
+        db.session.add(entry)
+        db.session.commit()
+        return redirect(url_for(redir))
+    elif request.method != 'POST':
+        if action == 'new':
+            form.date.data = datetime.utcnow()
+        if action == 'edit':
+            form.category.choices.insert(0,(entry.category.id,entry.category.name))
+            form.date.data = entry.date
+            form.due_date.data = entry.due_date
+            form.info.data = entry.info
+            form.amount.data = entry.get_amount()
+            form.check.data = entry.is_checked()
+    return render_template(
+        'entry.html',
+        title = 'Configure entry',
+        form = form)
+
+@app.route('/entries')
+@login_required
+def entries():
+    entries = g.user.entries.order_by(Entry.date.desc())
+    return render_template(
+        'entries.html',
+        title = 'Entries',
+        entries=entries)
 
 @app.route('/delete/<type>/<id>', methods = ['GET','POST'])
 @login_required
@@ -127,13 +202,17 @@ def delete(type,id):
     if form.validate_on_submit():
         if type == "category":
             c = Category.query.get(id)
-            if category != None:
-                db.session.delete(c)
-                db.session.commit()
-                flash('Category deleted')
-            return redirect(url_for('settings'))
+            redir = 'settings'
+        elif type == "entry":
+            c = Entry.query.get(id)
+            redir = 'entries'
         else:
-            abort(500)
+            c = None
+        if c != None:
+            db.session.delete(c)
+            db.session.commit()
+            flash('Delete successful')
+            return redirect(url_for(redir))
     return render_template(
         'delete.html',
         title = 'Delete',
