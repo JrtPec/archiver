@@ -7,6 +7,7 @@ class User(db.Model):
 	facebook_id = db.Column(db.String(64))
 	categories = db.relationship('Category', backref = 'user', lazy = 'dynamic', cascade="all, delete, delete-orphan")
 	entries = db.relationship('Entry', backref = 'user', lazy = 'dynamic', cascade="all, delete, delete-orphan")
+	files = db.relationship('File', backref = 'user', lazy = 'dynamic', cascade="all, delete, delete-orphan")
 
 	def is_authenticated(self):
 		return True
@@ -38,6 +39,7 @@ class Entry(db.Model):
 	cents = db.Column(db.Integer)
 	info = db.Column(db.String(140))
 	check = db.Column(db.SmallInteger, default=0)
+	files = db.relationship('File', backref = 'entry', lazy = 'dynamic', cascade="all,delete,delete-orphan")
 
 	def set_amount(self,euros):
 		self.cents = int(euros*100)
@@ -61,4 +63,12 @@ class Entry(db.Model):
 		else:
 			self.check = 0
 		pass
+
+class File(db.Model):
+	__tablename__ = 'file'
+	id = db.Column(db.Integer, primary_key = True)
+	extension = db.Column(db.String(10))
+	filename = db.Column(db.String(64))
+	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+	entry_id = db.Column(db.Integer, db.ForeignKey('entry.id'))
 

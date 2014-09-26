@@ -4,6 +4,13 @@ from flask import g, render_template, redirect, flash, session, url_for, request
 from models import User, Category, Entry
 from forms import category_form, delete_form, entry_form
 from datetime import datetime
+from werkzeug import secure_filename
+from config import ALLOWED_EXTENSIONS, UPLOAD_FOLDER
+import os
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path,'static'),'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 @app.before_request
 def before_request():
@@ -16,13 +23,13 @@ def load_user(id):
 @app.errorhandler(404)
 def internal_error(error):
     flash('That page was not found, sorry!')
-    return redirect(url_for('/'))
+    return redirect(url_for('index'))
 
 @app.errorhandler(500)
 def internal_error(error):
     db.session.rollback()
     flash('Something went wrong, sorry!')
-    return redirect(url_for('/'))
+    return redirect(url_for('index'))
 
 @app.route('/login')
 def login():
@@ -239,3 +246,25 @@ def delete(type,id):
         title = 'Delete',
         form = form,
         thing = type)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.',1)[1].lower() in ALLOWED_EXTENSIONS
+
+def get_extension(filename):
+    return filename.rsplit('.',1)[1].lower()
+
+@app.route('/upload', methods=['GET','POST'])
+def upload():
+    if request.method == 'POST':
+        file = request.files['file']
+        if file and allowed_file(file.filename):
+            filename = secure_filename(str(g.user.facebook_id)+"_"+str(datetime.utcnow().isoformat().replace(".","-"))+"."+get_extension(file.filename))
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'],filename))
+            flash('Upload successful')
+            return redirect(url_for('index'))
+        else:
+            flash('File not allowed')
+            return redirect(url_for('index'))
+    else:
+        flash('Something went wrong, sorry!')
+        return redirect(url_for('index'))
