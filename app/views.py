@@ -128,17 +128,24 @@ def category(action, id=None):
 @app.route('/entry/<action>/<id>', methods = ['GET','POST'])
 @login_required
 def entry(action,id=None):
+    if action == "edit" or action == "check":
+        entry = Entry.query.get(id)
+        if entry == None or entry.user != g.user:
+            return redirect(url_for('entries'))
+
+    if action == "check":
+        entry.toggle_check()
+        db.session.add(entry)
+        db.session.commit()
+        flash('Check!')
+        return redirect(url_for('entries'))
+
     if g.user.categories.first() == None:
         flash('You need at least one category to start adding entries')
         return redirect(url_for('category',action='new'))
 
     form = entry_form()
     form.category.choices = [(c.id, c.name) for c in g.user.categories]
-
-    if action == "edit":
-        entry = Entry.query.get(id)
-        if entry == None:
-            return redirect(url_for('entries'))
 
     if form.validate_on_submit():
         if action == "new":
