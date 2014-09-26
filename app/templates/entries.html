@@ -47,12 +47,12 @@
 				{% endif %}
 				<p>
 					{% if entry.is_checked() == False %}
-					<a href="{{url_for('entry',action='check',id=entry.id)}}">
+					<a href="{{url_for('check_entry',id=entry.id)}}">
 						<i class="icon icon-check"></i>
 					</a>
 					|
 					{% endif %}
-					<a href="{{url_for('entry',action='edit',id=entry.id)}}">
+					<a href="{{url_for('edit_entry',id=entry.id)}}">
 						<i class="icon icon-edit"></i>
 					</a>
 					|

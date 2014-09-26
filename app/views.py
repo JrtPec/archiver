@@ -124,22 +124,9 @@ def category(action, id=None):
         title = "Configure category",
         form = form)
 
-@app.route('/entry/<action>', methods = ['GET','POST'])
-@app.route('/entry/<action>/<id>', methods = ['GET','POST'])
+@app.route('/new_entry', methods = ['GET','POST'])
 @login_required
-def entry(action,id=None):
-    if action == "edit" or action == "check":
-        entry = Entry.query.get(id)
-        if entry == None or entry.user != g.user:
-            return redirect(url_for('entries'))
-
-    if action == "check":
-        entry.toggle_check()
-        db.session.add(entry)
-        db.session.commit()
-        flash('Check!')
-        return redirect(url_for('entries'))
-
+def new_entry():
     if g.user.categories.first() == None:
         flash('You need at least one category to start adding entries')
         return redirect(url_for('category',action='new'))
@@ -148,50 +135,77 @@ def entry(action,id=None):
     form.category.choices = [(c.id, c.name) for c in g.user.categories]
 
     if form.validate_on_submit():
-        if action == "new":
-            entry = Entry(user=g.user,
-                category_id=form.category.data,
-                date=form.date.data,
-                due_date=form.due_date.data,
-                info=form.info.data)
-            if form.amount.data:
-                entry.set_amount(euros=form.amount.data)
-            if form.check.data == True:
-                entry.check = 1
-            flash('New entry added!')
-            redir = 'index'
-        if action == "edit":
-            entry.category_id = form.category.data
-            entry.date = form.date.data
-            entry.due_date = form.due_date.data
-            entry.info = form.info.data
-            if form.amount.data == None:
-                entry.cents == None
-            else:
-                entry.set_amount(euros=form.amount.data)
-            if form.check.data == True:
-                entry.check = 1
-            else:
-                entry.check = 0
-            flash('Entry eddited!')
-            redir = 'entries'
+        entry = Entry(user=g.user,
+            category_id=form.category.data,
+            date=form.date.data,
+            due_date=form.due_date.data,
+            info=form.info.data)
+        if form.amount.data:
+            entry.set_amount(euros=form.amount.data)
+        if form.check.data == True:
+            entry.check = 1
         db.session.add(entry)
         db.session.commit()
-        return redirect(url_for(redir))
+        flash('New entry added!')
+        return redirect(url_for('index'))
     elif request.method != 'POST':
-        if action == 'new':
-            form.date.data = datetime.utcnow()
-        if action == 'edit':
-            form.category.choices.insert(0,(entry.category.id,entry.category.name))
-            form.date.data = entry.date
-            form.due_date.data = entry.due_date
-            form.info.data = entry.info
-            form.amount.data = entry.get_amount()
-            form.check.data = entry.is_checked()
+        form.date.data = datetime.utcnow()
+    return render_template(
+        'entry.html',
+        title = 'New entry',
+        form = form)
+
+@app.route('/edit_entry', methods = ['GET','POST'])
+@login_required
+def edit_entry(id):
+    entry = Entry.query.get(id)
+    if entry == None or entry.user != g.user:
+        return redirect(url_for('entries'))
+
+    form = entry_form()
+    form.category.choices = [(c.id, c.name) for c in g.user.categories]
+
+    if form.validate_on_submit():
+        entry.category_id = form.category.data
+        entry.date = form.date.data
+        entry.due_date = form.due_date.data
+        entry.info = form.info.data
+        if form.amount.data == None:
+            entry.cents == None
+        else:
+            entry.set_amount(euros=form.amount.data)
+        if form.check.data == True:
+            entry.check = 1
+        else:
+            entry.check = 0
+        db.session.add(entry)
+        db.session.commit()
+        flash('Entry eddited!')
+        return redirect(url_for('entries'))
+    elif request.method != 'POST':
+        form.category.choices.insert(0,(entry.category.id,entry.category.name))
+        form.date.data = entry.date
+        form.due_date.data = entry.due_date
+        form.info.data = entry.info
+        form.amount.data = entry.get_amount()
+        form.check.data = entry.is_checked()
     return render_template(
         'entry.html',
         title = 'Configure entry',
         form = form)
+
+@app.route('/check_entry/<id>')
+@login_required
+def check_entry(id):
+    entry = Entry.query.get(id)
+    if entry == None or entry.user != g.user:
+        return redirect(url_for('entries'))
+
+    entry.toggle_check()
+    db.session.add(entry)
+    db.session.commit()
+    flash('Check!')
+    return redirect(url_for('entries'))        
 
 @app.route('/entries')
 @login_required
