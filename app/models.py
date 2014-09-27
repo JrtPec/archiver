@@ -67,7 +67,6 @@ class Entry(db.Model):
 class File(db.Model):
 	__tablename__ = 'file'
 	id = db.Column(db.Integer, primary_key = True)
-	extension = db.Column(db.String(10))
 	filename = db.Column(db.String(64))
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 	entry_id = db.Column(db.Integer, db.ForeignKey('entry.id'))

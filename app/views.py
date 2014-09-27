@@ -1,11 +1,11 @@
 from app import app, lm, facebook, db
 from flask.ext.login import current_user, login_required, login_user, logout_user
-from flask import g, render_template, redirect, flash, session, url_for, request, abort
-from models import User, Category, Entry
+from flask import g, render_template, redirect, flash, session, url_for, request, abort, send_from_directory, send_file
+from models import User, Category, Entry, File
 from forms import category_form, delete_form, entry_form
 from datetime import datetime
 from werkzeug import secure_filename
-from config import ALLOWED_EXTENSIONS, UPLOAD_FOLDER
+from config import ALLOWED_EXTENSIONS, UPLOAD_FOLDER, FILE_FOLDER
 import os
 
 @app.route('/favicon.ico')
@@ -23,6 +23,11 @@ def load_user(id):
 @app.errorhandler(404)
 def internal_error(error):
     flash('That page was not found, sorry!')
+    return redirect(url_for('index'))
+
+@app.errorhandler(401)
+def internal_error(error):
+    flash("You don't have that permission, sorry!")
     return redirect(url_for('index'))
 
 @app.errorhandler(500)
@@ -103,7 +108,7 @@ def category(action, id=None):
     if action=="edit":
         category = Category.query.get(id)
         if category == None:
-            return redirect(url_for('settings'))
+            abort(404)
         name = category.name
     else:
         name = None
@@ -132,8 +137,9 @@ def category(action, id=None):
         form = form)
 
 @app.route('/new_entry', methods = ['GET','POST'])
+@app.route('/new_entry/<file_id>', methods = ['GET','POST'])
 @login_required
-def new_entry():
+def new_entry(file_id=None):
     if g.user.categories.first() == None:
         flash('You need at least one category to start adding entries')
         return redirect(url_for('category',action='new'))
@@ -151,6 +157,16 @@ def new_entry():
             entry.set_amount(euros=form.amount.data)
         if form.check.data == True:
             entry.check = 1
+
+        if file_id:
+            file = File.query.get(file_id)
+            if file == None:
+                abort(500)
+            elif file.user != g.user:
+                abort(401)
+            else:
+                file.entry = entry
+                db.session.add(file)
         db.session.add(entry)
         db.session.commit()
         flash('New entry added!')
@@ -166,8 +182,10 @@ def new_entry():
 @login_required
 def edit_entry(id):
     entry = Entry.query.get(id)
-    if entry == None or entry.user != g.user:
-        return redirect(url_for('entries'))
+    if entry == None:
+        abort(404)
+    elif entry.user != g.user:
+        abort(401)
 
     form = entry_form()
     form.category.choices = [(c.id, c.name) for c in g.user.categories]
@@ -205,8 +223,10 @@ def edit_entry(id):
 @login_required
 def check_entry(id):
     entry = Entry.query.get(id)
-    if entry == None or entry.user != g.user:
-        return redirect(url_for('entries'))
+    if entry == None:
+        abort(404)
+    elif entry.user != g.user:
+        abort(401)
 
     entry.toggle_check()
     db.session.add(entry)
@@ -234,6 +254,9 @@ def delete(type,id):
         elif type == "entry":
             c = Entry.query.get(id)
             redir = 'entries'
+        elif type == 'file':
+            c = File.query.get(id)
+            redir = 'entries'
         else:
             c = None
         if c != None:
@@ -241,6 +264,8 @@ def delete(type,id):
             db.session.commit()
             flash('Delete successful')
             return redirect(url_for(redir))
+        else:
+            abort(500)
     return render_template(
         'delete.html',
         title = 'Delete',
@@ -253,18 +278,32 @@ def allowed_file(filename):
 def get_extension(filename):
     return filename.rsplit('.',1)[1].lower()
 
-@app.route('/upload', methods=['GET','POST'])
+@app.route('/upload', methods=['POST'])
+@login_required
 def upload():
     if request.method == 'POST':
         file = request.files['file']
         if file and allowed_file(file.filename):
             filename = secure_filename(str(g.user.facebook_id)+"_"+str(datetime.utcnow().isoformat().replace(".","-"))+"."+get_extension(file.filename))
             file.save(os.path.join(app.config['UPLOAD_FOLDER'],filename))
+            file_db = File(user=g.user,filename=filename)
+            db.session.add(file_db)
+            db.session.commit()
             flash('Upload successful')
-            return redirect(url_for('index'))
+            return redirect(url_for('new_entry',file_id=file_db.id))
         else:
             flash('File not allowed')
-            return redirect(url_for('index'))
+            abort(500)
     else:
-        flash('Something went wrong, sorry!')
-        return redirect(url_for('index'))
+        abort(500)
+
+@app.route('/file/<id>')
+@login_required
+def file(id):
+    file = File.query.get(id)
+    if file == None:
+        abort(404)
+    elif file.user != g.user:
+        abort(401)
+    else:
+        return send_from_directory(os.path.join(app.root_path,FILE_FOLDER),file.filename)

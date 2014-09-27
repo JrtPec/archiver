@@ -20,4 +20,5 @@ SQLALCHEMY_RECORD_QUERIES = True
 DATABASE_QUERY_TIMEOUT = 0.5
 
 UPLOAD_FOLDER = 'app/uploads'
+FILE_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = set(['pdf','png','jpg','jpeg','gif'])
