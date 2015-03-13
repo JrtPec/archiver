@@ -1,6 +1,47 @@
 {% extends "base.html" %}
 {% block content %}
-	<div class="well">
-		<h1>HELLO WORLD</h1>
+<style>
+h2 {
+	position: relative;
+    top: 150px;
+    font-size:3000%;
+}
+</style>
+{% if not number %}
+	<div class="well" align="center">
+		<h1>Klaar om te dobbelen?</h1>
+	</div>
+{% else %}
+	<div align="center", top='20'>
+		<h2>{{number}}</h2>
+	</div>
+	</br></br></br></br></br></br></br></br></br></br></br></br></br></br></br></br></br></br></br></br>
+{% endif %}
+	<div>
+		<form class="form-horizontal" action="" method="post" name="dobbel">
+			{{form.hidden_tag()}}
+			<div style="text-align:center">
+	            <input class="btn btn-primary" type="submit" value="dobbel">
+	        </div>
+	        </br></br></br></br></br></br></br></br></br>
+			<div class="control-group{% if form.errors.post %} error{% endif %}">
+	        	<label class="control-label" for="lower">Ondergrens:</label>
+	            <div class="controls">
+	                {{ form.lower(class = "span1") }}
+	                {% for error in form.errors.lower %}
+	                    <span class="help-inline">[{{error}}]</span><br>
+	                {% endfor %}
+	            </div>
+        	</div>
+        	<div class="control-group{% if form.errors.post %} error{% endif %}">
+	        	<label class="control-label" for="upper">Bovengrens:</label>
+	            <div class="controls">
+	                {{ form.upper(class = "span1") }}
+	                {% for error in form.errors.upper %}
+	                    <span class="help-inline">[{{error}}]</span><br>
+	                {% endfor %}
+	            </div>
+        	</div>
+		</form>
 	</div>
 {% endblock %}
