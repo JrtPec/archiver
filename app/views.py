@@ -31,16 +31,36 @@ def internal_error(error):
 @app.route('/', methods = ['GET','POST'])
 @app.route('/index', methods = ['GET','POST'])
 def index():
+    try:
+        lower = g.lower
+        upper = g.upper
+    except:
+        lower = 1
+        upper = 6
+        
     form = dobbel_form()
     if form.validate_on_submit():
-        lower = form.lower.data
-        upper = form.upper.data
         number = int(random.random()*(upper-(lower-1)) + lower)
     else:
         number = None
-        form.lower.data = 1
-        form.upper.data = 6
     return render_template(
 		'index.html',
         form=form,
         number=number)
+
+@app.route('/settings', methods = ['GET','POST'])
+def settings():
+    form = settings_form()
+    if form.validate_on_submit():
+        g.lower = form.lower.data
+        g.upper = form.upper.data
+    else:
+        try:
+            form.lower.data = g.lower
+            form.upper.data = g.upper
+        except:
+            form.lower.data = 1
+            form.upper.data = 6
+    return render_template(
+        'settings.html',
+        form=form)
