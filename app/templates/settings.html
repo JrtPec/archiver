@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+	<div class='well'>
+		<form class="form-horizontal" action="" method="post" name="dobbel">
+			{{form.hidden_tag()}}
+			<div class="control-group{% if form.errors.post %} error{% endif %}">
+	        	<label class="control-label" for="lower">Ondergrens:</label>
+	            <div class="controls">
+	                {{ form.lower(class = "span1") }}
+	                {% for error in form.errors.lower %}
+	                    <span class="help-inline">[{{error}}]</span><br>
+	                {% endfor %}
+	            </div>
+        	</div>
+        	<div class="control-group{% if form.errors.post %} error{% endif %}">
+	        	<label class="control-label" for="upper">Bovengrens:</label>
+	            <div class="controls">
+	                {{ form.upper(class = "span1") }}
+	                {% for error in form.errors.upper %}
+	                    <span class="help-inline">[{{error}}]</span><br>
+	                {% endfor %}
+	            </div>
+        	</div>
+        	<div>
+	            <input class="btn btn-primary" type="submit" value="Opslaan">
+	        </div>
+		</form>
+	</div>
+{% endblock %}

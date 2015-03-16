@@ -4,6 +4,9 @@ from wtforms.validators import DataRequired as Required
 from wtforms.validators import Length, optional,Regexp,NumberRange
 from flask import g
 
-class dobbel_form(Form):
+class settings_form(Form):
 	lower = IntegerField('lower',validators=[Required()])
 	upper = IntegerField('upper',validators=[Required()])
+
+class dobbel_form(Form):
+	pass
