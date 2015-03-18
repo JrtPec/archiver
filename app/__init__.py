@@ -23,4 +23,4 @@ facebook = oauth.remote_app('facebook',
     request_token_params={'scope': ('email, ')}
 )
 
-from app import views
+from app import views,models

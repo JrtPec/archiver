@@ -9,8 +9,8 @@ FACEBOOK_APP_ID = '251477738393481'
 FACEBOOK_APP_SECRET = '723ce8fda1034eaa465489362cf52b31'
     
 if os.environ.get('DATABASE_URL') is None:
-    #SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'app.db') + '?check_same_thread=False'
-    SQLALCHEMY_DATABASE_URI = "postgresql://jan@localhost/archiver"
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'app.db') + '?check_same_thread=False'
+    #SQLALCHEMY_DATABASE_URI = "postgresql://jan@localhost/archiver"
 else:
     SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
 SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
