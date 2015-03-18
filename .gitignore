@@ -3,3 +3,4 @@ app/uploads/*
 .DS_Store
 db_repository/
 flask/
+*.db
